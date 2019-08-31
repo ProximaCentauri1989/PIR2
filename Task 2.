@@ -1,0 +1,139 @@
+//===========Data keeper impelementation. Responsible for managing data===================
+class DataKeeperImpl {
+protected:
+	DataKeeperImpl();
+	DataKeeperImpl(const uint8_t* data, size_t size);
+	DataKeeperImpl(const DataKeeperImpl&) = delete; //copy prohibition
+	DataKeeperImpl& operator=(const DataKeeperImpl&) = delete; //assignment prohibition
+	~DataKeeperImpl();
+	void Swap(DataKeeperImpl& other) throw(); //swaps data
+	uint8_t* Copy(const uint8_t* data, size_t size); //makes copy of data
+	void InnerCopy(const uint8_t* data, uint8_t* dest, size_t size); //auxiliary function
+	const uint8_t* Ptr() const { return d; } //returns pointer to data
+	size_t Size() const { return sz; } //return size
+	const uint8_t* d; //data
+	size_t sz; //size
+};
+
+//============Data keeper. Inherits from DataKeeperImpl=======================
+class DataKeeper : private DataKeeperImpl {
+public:
+	DataKeeper();
+	DataKeeper(const DataKeeper& rhs);
+	DataKeeper& operator=(const DataKeeper& rhs);
+	~DataKeeper();
+	DataKeeper(const uint8_t *data, size_t size);
+	void Set(const uint8_t* data, size_t size);
+	void Add(const uint8_t* data, size_t size);
+	const uint8_t* Get() const;
+	size_t Size() const;
+};
+
+
+
+//===================Definiton of DataKeeperImpl===============================
+DataKeeperImpl::DataKeeperImpl(): d(nullptr), sz(0)
+{
+}
+
+DataKeeperImpl::DataKeeperImpl(const uint8_t *data, size_t size) : d(Copy(data, size)), sz(size)
+{
+}
+
+//Makes copy of data
+uint8_t* DataKeeperImpl::Copy(const uint8_t* source, size_t size)
+{
+	uint8_t* dest = new  uint8_t[size];
+	try {
+		this->InnerCopy(source, dest, size);
+	}
+	catch (...) {
+		delete dest;
+		throw;
+	}
+	return dest;
+}
+void DataKeeperImpl::InnerCopy(const uint8_t *source, uint8_t *dest, size_t size)
+{
+	std::copy(source, source + size, dest);
+}
+
+DataKeeperImpl::~DataKeeperImpl()
+{
+	delete d;
+}
+
+void DataKeeperImpl::Swap(DataKeeperImpl &rhs) throw()
+{
+	std::swap(this->d, rhs.d);
+	std::swap(this->sz, rhs.sz);
+}
+
+//===================Definiton of DataKeeper===============================
+DataKeeper::DataKeeper()
+{
+}
+
+//Catches exception in case if base class generates it
+DataKeeper::DataKeeper(const DataKeeper &rhs) try: DataKeeperImpl(rhs.d, rhs.sz)
+{
+} 
+catch(...) 
+{
+}
+
+DataKeeper::DataKeeper(const uint8_t *data, size_t size) try : DataKeeperImpl(data, size) 
+{
+}
+catch(...)
+{
+}
+
+//Copy-on-swap
+DataKeeper& DataKeeper::operator=(const DataKeeper& rhs)
+{
+	DataKeeper tmp(rhs);
+	this->Swap(tmp);
+	return *this;
+}
+
+//DataKeeperImpl do the work
+DataKeeper::~DataKeeper()
+{
+}
+
+//Creates copy and swap with "this". Then copy with an old data will be deleted
+void DataKeeper::Set(const uint8_t* data, size_t size)
+{
+	DataKeeper(data, size).Swap(*this);
+}
+
+void DataKeeper::Add(const uint8_t *data, size_t size)
+{
+	//1. Create an array of the required size
+	uint8_t* dest = new  uint8_t[this->Size() + size];
+
+	//2. Combine an old data with new data in one array. An exception may occur at any step.
+	try {
+		this->InnerCopy(this->d, dest, this->sz);
+		this->InnerCopy(data, dest + this->sz - 1, size);
+	}
+	catch (...) {
+		delete dest;
+		throw;
+	}
+	dest[this->sz + size - 1] = '\0';
+
+	//3. Swap and destroy an old array
+	DataKeeper(dest, this->sz + size).Swap(*this);
+}
+
+const uint8_t *DataKeeper::Get() const
+{
+	return this->Ptr();
+}
+
+size_t DataKeeper::Size() const
+{
+	return this->sz;
+}
