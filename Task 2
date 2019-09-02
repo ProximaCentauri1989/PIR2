@@ -60,7 +60,7 @@ void DataKeeperImpl::InnerCopy(const uint8_t *source, uint8_t *dest, size_t size
 
 DataKeeperImpl::~DataKeeperImpl()
 {
-	delete d;
+	delete[] d;
 }
 
 void DataKeeperImpl::Swap(DataKeeperImpl &rhs) throw()
