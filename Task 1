@@ -4,7 +4,7 @@
 
 class Lex {
 public:
-	bool operator()(std::string l, std::string r) {
+	bool operator()(conts std::string& l, const std::string& r) {
 		return std::lexicographical_compare(l.begin(), l.end(), r.begin(), r.end());
 	}
 };
