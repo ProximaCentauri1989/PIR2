@@ -1,0 +1,222 @@
+//ConditionalStreet.h
+
+#pragma once
+
+#include <iostream>
+#include <string>
+#include <vector>
+
+//+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-PERSON+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-//
+class Person {
+public:
+	enum class gender { male = 0, female = 1 };
+	Person(const std::string& firstName_, const std::string& lastName_, size_t age_, gender gen);
+	virtual ~Person() { std::cout << "Person\n"; }
+private:
+	std::string firstName;
+	std::string lastName;
+	size_t age;
+	gender gen;
+};
+
+//Worker has "is-a" relationship with basic class Person
+class Worker : public Person {
+public:
+	Worker(const std::string& fName, const std::string& lName, const std::string& postion, size_t a, gender g, size_t salary);
+	~Worker() { std::cout << "Worker\n";  }
+private:
+	std::string position;
+	size_t salary;
+};
+
+//Resident has "is-a" relationship with basic class Person
+class Resident : public Person {
+public:
+	Resident(const std::string& fName, const std::string& lName, size_t a, gender g, const std::string& member_);
+	~Resident() { std::cout << "Resident\n";  }
+private:
+	std::string member;
+};
+
+//+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-ACCOMODATION+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-//
+class Accomodation {
+public:
+	Accomodation(size_t number_, size_t numRooms_, size_t numPerson_, std::vector<std::shared_ptr<Person>>& p);
+	virtual ~Accomodation() { std::cout << "Accomodation\n";  }
+	virtual void DescribeAccomodation() = 0;
+private:
+	size_t number;
+	size_t numRooms;
+	size_t numPerson;
+	std::vector<std::shared_ptr<Person>> pSet;
+};
+
+//Office has "is-a" relationship with basic class Accomodation
+class Office : public Accomodation {
+public:
+	Office(size_t number_, size_t numRooms_, size_t numPerson_, const std::string& owner_, size_t numWorkPlaces_, std::vector<std::shared_ptr<Person>>& p);
+	~Office() { std::cout << "Office\n";  }
+	void DescribeAccomodation();
+private:
+	std::string owner;
+	size_t numWorkPlaces;
+};
+
+//Appartment has "is-a" relationship with basic class Accomodation
+class Appartment : public Accomodation {
+public:
+	Appartment(size_t number_, size_t numRooms_, size_t numPerson_, size_t taxpayers_, std::vector<std::shared_ptr<Person>>& p);
+	~Appartment() { std::cout << "Appartment\n"; }
+	void DescribeAccomodation();
+private:
+	size_t taxpayers;
+};
+
+//+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-BUILDING+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-//
+//Building is a template
+template<typename accom>
+class Building {
+public:
+	Building(std::string address_, size_t numFloors_, size_t numAccomodations_, std::vector<std::shared_ptr<accom>>& accomSet_) : address(address_), numFloors(numFloors_), numAccomodations(numAccomodations_),
+		accomSet(accomSet_)
+	{
+	}
+
+	virtual void DescribeAccomodation(size_t index);
+	void DescribeBuilding();
+	~Building() { std::cout << "Building\n"; };
+private:
+	std::string address;
+	size_t numFloors;
+	size_t numAccomodations;
+	std::vector<std::shared_ptr<accom>> accomSet;
+};
+
+template<typename accom>
+inline void Building<accom>::DescribeAccomodation(size_t index)
+{
+	if (0 > index || index >= numAccomodations) {
+		throw "out_or_range";
+	}
+	accomSet[index]->DescribeAccomodation(); //point of adjustment for template
+}
+
+template<typename accom>
+inline void Building<accom>::DescribeBuilding()
+{
+	std::cout << "Building has: \n";
+	std::cout << "\taddress: " << address << '\n';
+	std::cout << "\tamount of floors: " << numFloors << '\n';
+	std::cout << "\tamount of accomodations: " << numAccomodations << '\n';
+}
+
+//ConditionalStreet.cpp
+
+#include "pch.h"
+#include "СonditionalStreet.h"
+
+Person::Person(const std::string & firstName_, const std::string & lastName_, size_t age_, gender gen_) : firstName(firstName_), lastName(lastName_), age(age_), gen(gen_)
+{
+}
+
+Worker::Worker(const std::string& fName, const std::string& lName, const std::string& pos, size_t a, gender g, size_t s): Person(fName, lName, a, g), 
+																																		position(pos), salary(s)
+{
+}
+
+Resident::Resident(const std::string& fName, const std::string& lName, size_t a, gender g, const std::string& m): Person(fName, lName, a, g),
+																													  member(m)
+{
+}
+
+Accomodation::Accomodation(size_t number_, size_t numRooms_, size_t numPerson_, std::vector<std::shared_ptr<Person>>& p) : number(number_), numRooms(numRooms_), numPerson(numPerson_), pSet(p)
+{
+}
+
+//Определена функция Accomodation::DescribeAccomodation для предоставления частичной функциональности для проивзодных классов
+void Accomodation::DescribeAccomodation() {
+	std::cout << "\tnumber: " << number << '\n';
+	std::cout << "\tamount of rooms: " << numRooms << '\n';
+	std::cout << "\tamount of persons: " << numPerson << '\n';
+}
+
+Office::Office(size_t number_, size_t numRooms_, size_t numPerson_, const std::string & owner_, size_t numWorkPlaces_, std::vector<std::shared_ptr<Person>>& p) : Accomodation(number_, numRooms_, numPerson_, p),
+owner(owner_), numWorkPlaces(numWorkPlaces_)
+{
+}
+
+void Office::DescribeAccomodation()
+{
+	std::cout << "Office has:\n";
+	Accomodation::DescribeAccomodation(); //описать часть общую для всех помещений (его номер, количество комнат, количество людей)
+	//Описать оставщуюся часть, присущую оффису
+	std::cout << "\towner: " << owner << '\n';
+	std::cout << "\tamount of worklaces: " << numWorkPlaces << '\n';
+}
+
+Appartment::Appartment(size_t number_, size_t numRooms_, size_t numPerson_, size_t taxpayers_, std::vector<std::shared_ptr<Person>>& p): Accomodation(number_, numRooms_, numPerson_, p),
+taxpayers(taxpayers_)
+{
+}
+
+void Appartment::DescribeAccomodation()
+{
+	std::cout << "Appartment has:\n";
+	Accomodation::DescribeAccomodation();
+	std::cout << "\tamount of taxpayers " << taxpayers << '\n';
+}
+
+//main.cpp
+
+#include "pch.h"
+#include <iostream>
+
+int main()
+{	
+	std::vector<std::shared_ptr<Person>> personSetOffice1{
+		std::make_shared<Worker>("Name1", "LastName1", "software intern developer", 25, Person::gender::male, 500),
+		std::make_shared<Worker>("Name2", "LastName2", "software intern developer", 19, Person::gender::female, 500),
+		std::make_shared<Worker>("Name3", "LastName3", "software intern developer", 24, Person::gender::male, 500),
+		std::make_shared<Worker>("Name4", "LastName4", "software intern developer", 32, Person::gender::male, 500),
+	};
+
+	std::vector<std::shared_ptr<Person>> personSetOffice2{
+		std::make_shared<Worker>("Name5", "LastName5", "software intern developer", 25, Person::gender::male, 500),
+		std::make_shared<Worker>("Name6", "LastName6", "software intern developer", 19, Person::gender::female, 500),
+		std::make_shared<Worker>("Name7", "LastName7", "software intern developer", 24, Person::gender::male, 500),
+		std::make_shared<Worker>("Name8", "LastName8", "software intern developer", 32, Person::gender::male, 500),
+	};
+
+	std::vector<std::shared_ptr<Person>> personSetAppartment1{
+		std::make_shared<Resident>("Name9", "LastName9", 25, Person::gender::male, "father"),
+		std::make_shared<Resident>("Name10", "LastName10", 25, Person::gender::female, "mother"),
+		std::make_shared<Resident>("Name11", "LastName11", 25, Person::gender::male, "father"),
+		std::make_shared<Resident>("Name12", "LastName12", 25, Person::gender::male, "father"),
+	};
+
+	std::vector<std::shared_ptr<Person>> personSetAppartment2{
+		std::make_shared<Resident>("Name13", "LastName13", 25, Person::gender::male, "father"),
+		std::make_shared<Resident>("Name14", "LastName14", 25, Person::gender::female, "mother"),
+		std::make_shared<Resident>("Name15", "LastName15", 25, Person::gender::male, "father"),
+		std::make_shared<Resident>("Name16", "LastName16", 25, Person::gender::male, "father"),
+	};
+
+	
+	std::vector<std::shared_ptr<Accomodation>> accSet1{
+		std::make_shared<Office>(110, 2, 4, "OwnerName1", 6, personSetOffice1),
+		std::make_shared<Office>(111, 2, 4, "OwnerName2", 8, personSetOffice2)
+	};
+
+	std::vector<std::shared_ptr<Accomodation>> accSet2{
+		std::make_shared<Appartment>(310, 2, 4, 3, personSetAppartment1),
+		std::make_shared<Appartment>(512, 3, 2, 2, personSetAppartment2)
+	};
+
+	Building<Accomodation> building1(std::string("conditional address"), 1, 2, accSet1);
+	Building<Accomodation> building2(std::string("conditional address"), 1, 2, accSet2);
+
+	building1.DescribeBuilding();
+	building1.DescribeAccomodation(1);
+	building2.DescribeBuilding();
+	building2.DescribeAccomodation(0);
+}
