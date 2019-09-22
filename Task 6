@@ -1,0 +1,72 @@
+template<typename T>
+class PtrVector {
+public:
+	PtrVector(): ptr(nullptr), n(0) {}
+	~PtrVector() { delete[] ptr; };
+	PtrVector(const PtrVector& other): ptr(!other.ptr? nullptr : new T[other.n]), n(other.n)
+	{
+		if (this->ptr != nullptr) {
+			try {
+				std::copy(other.ptr, other.ptr + n, ptr);
+			}
+			catch (...) {
+				delete[] ptr;
+				throw;
+			}
+		}
+	}
+	PtrVector& operator=(const PtrVector& other);
+
+	void Add(T* p, size_t n_);
+	T& Get(size_t index);
+	const T& Get(size_t index) const;
+	void Clear();
+private:
+	void Swap(PtrVector<T>& other) { std::swap(ptr, other.ptr); }
+	T* ptr;
+	size_t n;
+};
+
+template<class T>
+inline PtrVector<T>& PtrVector<T>::operator=(const PtrVector<T>& other)
+{
+	PtrVector tmp(other);
+	tmp.Swap(*this);
+	return *this;
+}
+
+template<class T>
+inline void PtrVector<T>::Add(T* p, size_t n_)
+{
+	delete[] ptr;
+	this->ptr = p;
+	this->n = n_;
+}
+
+template<class T>
+inline T& PtrVector<T>::Get(size_t index)
+{
+	if (0 > index || index >= n) {
+		throw std::out_of_range("Index is out of range");
+	}
+
+	return ptr[index];
+}
+
+template<class T>
+inline const T& PtrVector<T>::Get(size_t index) const
+{
+	if (0 > index || index >= n) {
+		throw std::out_of_range("Index is out of range");
+	}
+
+	return ptr[index];
+}
+
+template<class T>
+inline void PtrVector<T>::Clear()
+{
+	delete[] this->ptr;
+	this->ptr = nullptr;
+	this->n = 0;
+}
