@@ -15,8 +15,8 @@ public:
 	PtrVector(const PtrVector& other);
 	PtrVector& operator=(const PtrVector& other);
 	void Add(T* p);
-	T* Get(size_t index);
-	const T* Get(size_t index) const;
+	T& Get(size_t index);
+	const T& Get(size_t index) const;
 	void Clear();
 private:
 	std::vector<std::unique_ptr<T>> vec;
@@ -47,19 +47,22 @@ inline void PtrVector<T>::Add(T *p)
 }
 
 template<typename T>
-inline T* PtrVector<T>::Get(size_t index)
+inline T& PtrVector<T>::Get(size_t index)
 {
 	if (0 > index || index >= vec.size()) {
 		throw std::out_of_range("Index is out of range");
 	}
 
-	return vec[index].get();
+	return *vec[index].get();
 }
 
 template<typename T>
-inline const T* PtrVector<T>::Get(size_t index) const
+inline const T& PtrVector<T>::Get(size_t index) const
 {
-	return vec[index].Get();
+        if (0 > index || index >= vec.size()) {
+		throw std::out_of_range("Index is out of range");
+	}
+	return *vec[index].get();
 }
 
 template<typename T>
@@ -87,3 +90,8 @@ destructor
 destructor
 destructor
 destructor
+
+//In case of int
+PtrVector<int> vec;
+vec.Add(new int(10));
+vec.Get(0) = 11;
