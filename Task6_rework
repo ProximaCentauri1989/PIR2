@@ -1,3 +1,4 @@
+//Test class
 class A
 {
 public:
@@ -5,6 +6,7 @@ public:
 	~A() { std::cout << "destructor" << std::endl; };
 };
 
+//Main class
 template<typename T>
 class PtrVector {
 public:
@@ -65,3 +67,23 @@ inline void PtrVector<T>::Clear()
 {
 	vec.clear();
 }
+
+//Main.cpp
+PtrVector<A> vec1;
+vec1.Add(new A); constructor A
+PtrVector<A> vec2;
+vec2.Add(new A); constructor A
+PtrVector<A> vec3(vec1);
+vec2 = vec3; //destructor A
+
+vec1.Clear(); //destructor A
+vec2.Clear(); //destructor A
+vec3.Clear(); //destructor A
+
+Output:
+constructor
+constructor
+destructor
+destructor
+destructor
+destructor
