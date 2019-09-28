@@ -38,7 +38,7 @@ inline PtrVector<T> & PtrVector<T>::operator=(const PtrVector<T> & other)
 	PtrVector<T> tmp(other);
 	vec.swap(tmp.vec);
 	return *this;
-}
+} //destructor of tmp should be called
 
 template<typename T>
 inline void PtrVector<T>::Add(T *p)
