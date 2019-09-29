@@ -1,0 +1,115 @@
+//DataKeepr.h
+class StringKeeper {
+public:
+	StringKeeper(const std::string& str);
+	StringKeeper(const StringKeeper& other);
+	~StringKeeper();
+	StringKeeper& operator=(const StringKeeper& other);
+	const std::string& Get() const;
+	std::string& Get();
+private:
+	std::string* pStr; //string
+	size_t* ref; //reference counter
+	std::mutex m; //for concurency
+	static const size_t unsharable; //value that represents unsharable state for string
+	void WillModify(); //Prepare string for modify
+};
+
+
+//DataKeepr.cpp
+const size_t StringKeeper::unsharable = SIZE_MAX; //when string is about to modify (when using non-constant Get()) we mark it as unsharable
+
+StringKeeper::StringKeeper(const std::string& str) : pStr(new std::string(str))
+{
+	try {
+		ref = new size_t(1);
+	}
+	catch (const std::bad_alloc& ba) {
+		delete pStr;
+		throw;
+	}
+}
+
+StringKeeper::StringKeeper(const StringKeeper& other)
+{
+	bool flag = false;
+	m.lock();
+  //If string in 'other' marked as unsharable it means that someone is about to change that string (someone used Get() and works with string at the moment)
+  //That's why we mustn't share it. We must create a copy from it.
+  
+  //1. String is non-unsharable
+	if (*other.ref != unsharable) {
+		flag = true;
+		pStr = other.pStr;
+		++*other.ref;
+		ref = other.ref;
+	}
+	m.unlock();
+  
+  //1. String is unsharable
+	if (flag == false) {
+		pStr = new std::string(*other.pStr);
+		//Possible memory leak if an exception occurs while allocating memory for ref
+		try {
+			ref = new size_t(1);
+		}
+		catch (const std::bad_alloc& ba) {
+			delete pStr;
+			throw;
+		}
+	}
+}
+
+StringKeeper::~StringKeeper()
+{
+	bool flag = false;
+	m.lock();
+	if (*ref == unsharable || --(*ref) < 1) {
+		flag = true;
+	}
+	m.unlock();
+	if (flag) {
+		delete pStr;
+	}
+}
+
+StringKeeper& StringKeeper::operator=(const StringKeeper & other)
+{
+	StringKeeper tmp(other);
+	std::swap(tmp.pStr, this->pStr);
+	std::swap(tmp.ref, this->ref);
+	return *this;
+}
+
+const std::string& StringKeeper::Get() const
+{
+	return *pStr;
+}
+
+std::string& StringKeeper::Get()
+{
+	this->WillModify(); //Prepare for modify
+	return *pStr;
+}
+
+void StringKeeper::WillModify()
+{
+	m.lock();
+  //Our string is about to modify because someone used non-constant Get. We must create a new string.
+	if (*ref > 1 && *ref != unsharable) {
+		std::string* new_pStr = new std::string(*pStr);
+		size_t *newRef;
+		try {
+			newRef = new size_t(1);
+		}
+		catch (const std::bad_alloc& ba) {
+			delete pStr;
+			throw;
+		}
+		--(*ref);
+		pStr = new_pStr;
+		ref = newRef;
+	}
+	*ref = unsharable;
+	m.unlock();
+}
