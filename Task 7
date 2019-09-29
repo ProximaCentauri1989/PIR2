@@ -12,7 +12,7 @@ private:
 	size_t* ref; //reference counter
 	std::mutex m; //for concurency
 	static const size_t unsharable; //value that represents unsharable state for string
-	void WillModify(); //Prepare string for modify
+	void WillModify(); //Prepares a string for modify
 };
 
 
