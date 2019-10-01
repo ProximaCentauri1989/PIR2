@@ -62,15 +62,15 @@ StringKeeper::StringKeeper(const StringKeeper& other)
 
 StringKeeper::~StringKeeper()
 {
-	bool flag = false;
-	m.lock();
-	if (*ref == unsharable || --(*ref) < 1) {
-		flag = true;
-	}
-	m.unlock();
-	if (flag) {
-		delete pStr;
-	}
+   bool flag = false;
+   m.lock();
+   if (*ref == unsharable || --(*ref) < 1) {
+	flag = true;
+   }
+   m.unlock();
+   if (flag) {
+	delete pStr;
+   }
 }
 
 StringKeeper& StringKeeper::operator=(const StringKeeper & other)
